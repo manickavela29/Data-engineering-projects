@@ -8,7 +8,6 @@ import os
 import pandas as pd
 from sqlalchemy import create_engine
 
-
 from time import time
 import pyarrow.parquet as pq
 
@@ -21,25 +20,21 @@ def main(params) :
     url = params.url
     table_name = params.table_name
 
-    engine = create_engine(f'postgresql://{user}:{password}@{host}:{port}/{db}')
-
-    engine.connect()
-
     parq_name = 'output.parquet'
     print("URL : ",url)
     os.system(f"wget {url} -O {parq_name}")
 
-    #df = pd.read_parquet(parq_name)
-
-    #print(pd.io.sql.get_schema(df,name='yellow_taxi_data'))
-    #df.to_sql(name=table_name,con=engine,if_exists='replace')
-
+    engine = create_engine(f'postgresql+psycopg2://{user}:{password}@{host}:{port}/{db}')
+    engine.connect()
+    #engine = f"postgresql://{user}:{password}@{host}:{port}/{db}"
+    print("HOST : ",host,' ',port)
     parquet_file = pq.ParquetFile(parq_name)
     for i in parquet_file.iter_batches():
         t_start = time()
 
         pd_i = i.to_pandas()
         pd_i.to_sql(name=table_name,con=engine,if_exists='append')
+        
         t_end = time()
         print("Batch sent in : ",t_end - t_start)
 

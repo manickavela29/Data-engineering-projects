@@ -11,6 +11,7 @@ docker run -it \
 pgcli -h localhost -p 5432 -u root -d ny_taxi
 
 #PGadmin 
+# Couldn't connect as  the sql and the pgadmin where in different dockers 
 docker run -it \
     -e PGADMIN_DEFAULT_EMAIL="admin@admin.com" \
     -e PGADMIN_DEFAULT_PASSWORD="root" \
@@ -26,7 +27,7 @@ docker run -it \
         -e POSTGRES_DB="ny_taxi" \
         -v /home/manix/mk_work/Data-Engineering-Projects/data-engineering-datatalk/ny_taxi_postgres_data:/var/lib/postgresql/data \
         -p 5432:5432 \
-        --network=pg-network-check \
+        --net=bridge \
         --name=pg-database-1 \
         postgres:13
 
@@ -34,7 +35,7 @@ docker run -it \
     -e PGADMIN_DEFAULT_EMAIL="admin@admin.com" \
     -e PGADMIN_DEFAULT_PASSWORD="root" \
     -p 8080:80 \
-    --network=pg-network-check \
+    --net=bridge \
     --name=pgadmin-1 \
     dpage/pgadmin4
 
@@ -54,4 +55,27 @@ python Data-ingestion.py \
     --table_name=yellow_taxi_trips \
     --url=${URL}
 
-    
+#creating a new docker for injesting the data in the netowkr
+#By default there is 'bridge' network connecting wiht it
+
+
+docker build -t taxi_injest:v001
+
+docker run --net=bridge taxi_injest:v001 \
+    --user=root \
+    --password=root \
+    --host=localhost \
+    --port=5432 \
+    --db=ny_taxi \
+    --table_name=yellow_taxi_trips \
+    --url=${URL}
+
+docker run -it \
+    -e POSTGRES_USER="root" \
+    -e POSTGRES_PASSWORD="root" \
+    -e POSTGRES_DB="ny_taxi" \
+    -v /home/manix/mk_work/Data-Engineering-Projects/data-engineering-datatalk/ny_taxi_postgres_data:/var/lib/postgresql/data \
+    -p 5432:5432 \
+    --net=bridge \
+    --name=pg-database-1 \
+    postgres:13
